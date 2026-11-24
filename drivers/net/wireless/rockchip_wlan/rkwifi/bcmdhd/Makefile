@@ -49,7 +49,7 @@ CONFIG_BCMDHD_TPUT := y
 #CONFIG_BCMDHD_ADAPTER_INDEX := 0
 
 CONFIG_MACH_PLATFORM := y
-#CONFIG_BCMDHD_DTS := y
+CONFIG_BCMDHD_DTS := y
 
 DHDCFLAGS = -Wall -Wstrict-prototypes -Wno-date-time -Wno-strict-prototypes   \
 	-Wno-uninitialized -Wno-unused-but-set-variable -Wno-address	      \
