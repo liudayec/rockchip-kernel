@@ -92,7 +92,7 @@ jobs:
                      PPP PPP_ASYNC PPP_SYNC_TTY PPP_DEFLATE PPP_BSDCOMP \
                      BT BT_HCIVHCI BT_HCIUART BT_HCIUART_BCM BT_HCIUART_3WIRE \
                      BT_HCIUART_SERDEV BT_HCIUART_H4 BT_LE BT_RFCOMM BT_BNEP BT_HIDP \
-                     RFKILL_GPIO; do
+                     RFKILL_GPIO BCMDHD BCMDHD_SDIO AP6XXX; do
             sed -i "/^CONFIG_${opt}[= ]/d" "$DST"
             sed -i "/^# CONFIG_${opt} is not set/d" "$DST"
             echo "CONFIG_${opt}=y" >> "$DST"
@@ -125,7 +125,8 @@ jobs:
                    CONFIG_AP6XXX CONFIG_BCMDHD CONFIG_DRM_ACCEL \
                    CONFIG_ROCKCHIP_DW_HDMI CONFIG_ROCKCHIP_VOP2 \
                    CONFIG_USB_SERIAL_OPTION CONFIG_USB_USBNET CONFIG_PPP CONFIG_USB_NET_CDC_NCM \
-                   CONFIG_BT CONFIG_BT_HCIUART CONFIG_BT_HCIUART_BCM CONFIG_RFKILL_GPIO; do
+                   CONFIG_BT CONFIG_BT_HCIUART CONFIG_BT_HCIUART_BCM CONFIG_RFKILL_GPIO \
+                   CONFIG_BCMDHD CONFIG_BCMDHD_SDIO CONFIG_AP6XXX; do
             printf '%-38s' "$k"
             grep -E "^$k=" "$KCFG" || echo MISSING
           done
