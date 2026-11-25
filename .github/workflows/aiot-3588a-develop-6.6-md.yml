@@ -63,222 +63,115 @@ jobs:
       - name: Show environment
 
         run: |
-
           nproc
-
           uname -a
-
           df -h
-
-
-
       - name: Create simulated physical disk
 
         run: |
-
           mnt_size=$(expr $(df -h /mnt | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 1)
-
           root_size=$(expr $(df -h / | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 4)
-
           sudo truncate -s "${mnt_size}"G /mnt/mnt.img
-
           sudo truncate -s "${root_size}"G /root.img
-
           sudo losetup /dev/loop6 /mnt/mnt.img
-
           sudo losetup /dev/loop7 /root.img
-
           sudo pvcreate /dev/loop6
-
           sudo pvcreate /dev/loop7
-
           sudo vgcreate github /dev/loop6 /dev/loop7
-
           sudo lvcreate -n runner -l 100%FREE github
-
           sudo mkfs.xfs /dev/github/runner
-
           sudo mkdir -p /builder
-
           sudo mount /dev/github/runner /builder
-
           sudo chown -R runner.runner /builder
-
           df -Th
-
-
-
       - name: Install build dependency
 
         run: |
-
           sudo apt-get update
-
           sudo apt-get install -y --no-install-recommends \
-
             binutils-aarch64-linux-gnu crossbuild-essential-arm64 \
-
             gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
-
             libc6-dev-armhf-cross libgcc-12-dev-arm64-cross \
-
             bison flex libbison-dev libfl-dev libfdt-dev libelf-dev \
-
             device-tree-compiler u-boot-tools dwarves kmod \
-
             dosfstools e2fsprogs f2fs-tools xfsprogs btrfs-progs \
-
             squashfs-tools mtools parted gdisk fdisk \
-
             lz4 lzma lzop pigz pbzip2 pixz zstd gzip xz-utils zip unzip p7zip-full \
-
             build-essential ccache clang lld llvm make cmake pkg-config \
-
             libssl-dev libusb-1.0-0-dev libgmp3-dev libmpc-dev \
-
             libncurses-dev libncurses5-dev libncursesw5-dev lib32ncurses-dev \
-
             libpython3-dev python3 python3-pip python3-setuptools python-is-python3 \
-
             curl wget aria2 axel git rsync \
-
             coreutils util-linux uuid-runtime qemu-user-static binfmt-support \
-
             fakeroot expect patch patchutils sed tree jq ripgrep binwalk \
-
             sudo locales lsb-release ca-certificates gnupg dirmngr golang-go
-
-
-
       - name: Create MD+netfilter defconfig
 
         run: |
-
           SRC=arch/arm64/configs/aiot_3588a_defconfig
-
           DST=arch/arm64/configs/aiot_3588a_md_defconfig
-
           ls -l "$SRC"
-
           cp "$SRC" "$DST"
-
           for opt in BLK_DEV_MD MD_LINEAR MD_RAID0 MD_RAID1 MD_RAID10 MD_RAID456 \
-
                      NF_TABLES NF_TABLES_INET NF_NAT IP_NF_IPTABLES IP_NF_FILTER \
                      NFT_NAT NFT_COMPAT NFT_CT NFT_LOG NFT_REJECT \
                      NF_CONNTRACK NF_DEFRAG_IPV4 NF_NAT_MASQUERADE \
                      NF_TABLES_NETDEV NF_FLOW_TABLE \
-
                      IP_NF_NAT IP_NF_TARGET_MASQUERADE NETFILTER_XTABLES \
-
                      NETFILTER_XT_MATCH_ADDRTYPE NETFILTER_XT_MATCH_CONNTRACK \
-
                      NETFILTER_XT_MATCH_MULTIPORT NETFILTER_XT_MATCH_COMMENT \
-
                      BRIDGE BRIDGE_NETFILTER \
-
                      USB_SERIAL_OPTION USB_SERIAL_WWAN USB_ACM \
-
                      USB_USBNET USB_NET_CDCETHER USB_NET_CDC_NCM USB_NET_CDC_MBIM \
-
                      USB_NET_RNDIS_HOST USB_NET_QMI_WWAN \
-
                      PPP PPP_ASYNC PPP_SYNC_TTY PPP_DEFLATE PPP_BSDCOMP \
-
                      BT BT_HCIVHCI BT_HCIUART BT_HCIUART_BCM BT_HCIUART_3WIRE \
-
                      BT_HCIUART_SERDEV BT_HCIUART_H4 BT_LE BT_RFCOMM BT_BNEP BT_HIDP \
-
                      RFKILL_GPIO BCMDHD_SDIO AP6XXX; do
-
             sed -i "/^CONFIG_${opt}[= ]/d" "$DST"
-
             sed -i "/^# CONFIG_${opt} is not set/d" "$DST"
-
             echo "CONFIG_${opt}=y" >> "$DST"
-
           done
-
           # bcmdhd 必须是模块（=m）：builtin 会比 mmc2 早初始化，SDIO 卡还没枚举就超时
-
           sed -i '/^CONFIG_BCMDHD[= ]/d' "$DST"
-
           sed -i '/^# CONFIG_BCMDHD is not set/d' "$DST"
-
           echo 'CONFIG_BCMDHD=m' >> "$DST"
-
           echo 'CONFIG_BCMDHD_SDIO=y' >> "$DST"
-
           echo 'CONFIG_BCMDHD_PCIE=n' >> "$DST"
-
           echo '--- 追加的选项 ---'
-
           grep -E 'CONFIG_(BLK_DEV_MD|MD_RAID1|MD_RAID10|NF_TABLES|IP_NF_IPTABLES|IP_NF_TARGET_MASQUERADE)=' "$DST"
-
           sed -i 's/^DEFCONFIG=.*/DEFCONFIG="aiot_3588a_md_defconfig"/' kdev-build.sh
-
           echo '--- kdev-build.sh 的 DEFCONFIG ---'
-
           grep -n 'DEFCONFIG=' kdev-build.sh
-
           echo '--- 确认原有 WiFi/显示驱动仍在 ---'
-
           grep -E 'CONFIG_(AP6XXX|BCMDHD|DRM_ACCEL|ROCKCHIP_DW_HDMI)=' "$DST" || echo '(这些在 defconfig 里可能不是显式写死，由 Kconfig 默认值决定)'
-
-
-
       - name: Run Build
 
         working-directory: /builder
 
         run: |
-
           pwd
-
           sudo /bin/cp -a ${{ github.workspace }}/* .
-
           ls -alh | head -20
-
           sudo chown -R root:root .
-
           sudo ./kdev-build.sh
-
           echo '=== artifacts ==='
-
           ls -alh /builder/release/*
-
-
-
       - name: Verify config in artifact
 
         run: |
-
           KCFG=$(ls /builder/release/config-* | head -1)
-
           echo "verify $KCFG"
-
           for k in CONFIG_BLK_DEV_MD CONFIG_MD_RAID1 CONFIG_MD_RAID10 \
-
                    CONFIG_NF_TABLES CONFIG_IP_NF_IPTABLES CONFIG_IP_NF_TARGET_MASQUERADE \
-
                    CONFIG_AP6XXX CONFIG_BCMDHD CONFIG_DRM_ACCEL \
-
                    CONFIG_ROCKCHIP_DW_HDMI CONFIG_ROCKCHIP_VOP2 \
-
                    CONFIG_USB_SERIAL_OPTION CONFIG_USB_USBNET CONFIG_PPP CONFIG_USB_NET_CDC_NCM \
-
                    CONFIG_BT CONFIG_BT_HCIUART CONFIG_BT_HCIUART_BCM CONFIG_RFKILL_GPIO \
-
                    CONFIG_BCMDHD CONFIG_BCMDHD_SDIO CONFIG_AP6XXX CONFIG_BCMDHD_PCIE; do
-
             printf '%-38s' "$k"
-
             grep -E "^$k=" "$KCFG" || echo MISSING
-
           done
-
-
-
       - name: Upload Kernel to Release
 
         uses: ncipollo/release-action@main
