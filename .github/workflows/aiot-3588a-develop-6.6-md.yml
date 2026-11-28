@@ -126,6 +126,12 @@ jobs:
                      NETFILTER_XT_MATCH_ADDRTYPE NETFILTER_XT_MATCH_CONNTRACK \
                      NETFILTER_XT_MATCH_MULTIPORT NETFILTER_XT_MATCH_COMMENT \
                      BRIDGE BRIDGE_NETFILTER \
+                     OPENVSWITCH VXLAN GENEVE VLAN_8021Q VLAN_8021Q_GVRP \
+                     NF_CONNTRACK_BRIDGE \
+                     NFT_LIMIT NFT_MASQ NFT_REDIR NFT_COUNTER \
+                     NFT_CONNLIMIT NFT_OBJREF NFT_FIB NFT_TUNNEL \
+                     NFT_QUOTA NFT_SOCKET NFT_OSF NFT_TPROXY \
+                     NFT_DUP_NETDEV NFT_FWD_NETDEV \
                      USB_SERIAL_OPTION USB_SERIAL_WWAN USB_ACM \
                      USB_USBNET USB_NET_CDCETHER USB_NET_CDC_NCM USB_NET_CDC_MBIM \
                      USB_NET_RNDIS_HOST USB_NET_QMI_WWAN \
@@ -144,7 +150,7 @@ jobs:
           echo 'CONFIG_BCMDHD_SDIO=y' >> "$DST"
           echo 'CONFIG_BCMDHD_PCIE=n' >> "$DST"
           echo '--- 追加的选项 ---'
-          grep -E 'CONFIG_(BLK_DEV_MD|MD_RAID1|MD_RAID10|NF_TABLES|IP_NF_IPTABLES|IP_NF_TARGET_MASQUERADE)=' "$DST"
+          grep -E 'CONFIG_(BLK_DEV_MD|MD_RAID1|MD_RAID10|NF_TABLES|IP_NF_IPTABLES|IP_NF_TARGET_MASQUERADE|OPENVSWITCH|VXLAN|GENEVE|VLAN_8021Q)=' "$DST"
           sed -i 's/^DEFCONFIG=.*/DEFCONFIG="aiot_3588a_md_defconfig"/' kdev-build.sh
           echo '--- kdev-build.sh 的 DEFCONFIG ---'
           grep -n 'DEFCONFIG=' kdev-build.sh
